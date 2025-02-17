@@ -47,8 +47,5 @@ Check `evaluation/` folder after training for:
 - Confusion Matrix
 - ROC Curve
 
-## 📝 License
-MIT License
-
 ## 🤝 Contributing
 Contributions welcome! Please feel free to submit a Pull Request.
