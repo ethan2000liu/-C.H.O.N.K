@@ -8,7 +8,8 @@ processed_data/
 # Model files
 models/
 
-
+# # Evaluation results
+# evaluation/
 
 # Python
 __pycache__/
