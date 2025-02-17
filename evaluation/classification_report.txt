@@ -1,0 +1,8 @@
+              precision    recall  f1-score   support
+
+      Normal       0.57      0.21      0.31       112
+      Chonky       0.64      0.90      0.75       175
+
+    accuracy                           0.63       287
+   macro avg       0.61      0.56      0.53       287
+weighted avg       0.61      0.63      0.58       287
