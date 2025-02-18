@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>C.H.O.N.K. - Cat Classifier</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-4xl font-bold mb-8 text-center">C.H.O.N.K. 🐱</h1>
+        <p class="mb-4 text-center">Upload a cat photo to classify its chonkiness!</p>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <form id="uploadForm" class="mb-4">
+                <input type="file" id="imageInput" accept="image/*" class="mb-4">
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Classify Cat</button>
+            </form>
+            
+            <div id="result" class="hidden">
+                <img id="previewImage" class="max-w-full mb-4 rounded">
+                <div class="mb-4">
+                    <p class="text-xl font-bold">Result: <span id="prediction"></span></p>
+                    <p>Confidence: <span id="confidence"></span>%</p>
+                </div>
+                
+                <div class="mb-4">
+                    <p>Was this prediction correct?</p>
+                    <button onclick="sendFeedback(true)" class="bg-green-500 text-white px-4 py-2 rounded mr-2">Yes</button>
+                    <button onclick="sendFeedback(false)" class="bg-red-500 text-white px-4 py-2 rounded">No</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadForm = document.getElementById('uploadForm');
+        const resultDiv = document.getElementById('result');
+        let currentPrediction = null;
+        let currentImage = null;
+
+        uploadForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            const imageFile = document.getElementById('imageInput').files[0];
+            formData.append('file', imageFile);
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentPrediction = data;
+                    document.getElementById('prediction').textContent = data.prediction;
+                    document.getElementById('confidence').textContent = (data.confidence * 100).toFixed(2);
+                    
+                    const previewImage = document.getElementById('previewImage');
+                    previewImage.src = URL.createObjectURL(imageFile);
+                    
+                    resultDiv.classList.remove('hidden');
+                } else {
+                    alert(data.error);
+                }
+            } catch (error) {
+                alert('Error uploading image');
+            }
+        };
+
+        async function sendFeedback(isCorrect) {
+            if (!currentPrediction) return;
+
+            try {
+                const response = await fetch('/feedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        image_path: currentPrediction.image_path,
+                        prediction: currentPrediction.prediction,
+                        is_correct: isCorrect
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Thank you for your feedback!');
+                } else {
+                    alert(data.error);
+                }
+            } catch (error) {
+                alert('Error sending feedback');
+            }
+        }
+    </script>
+</body>
+</html> 
