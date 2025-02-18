@@ -1,84 +1,9 @@
-import tensorflow as tf
-import cv2
-import numpy as np
-import sys
 import os
+import tensorflow as tf
+from utils import load_and_preprocess_image
+from feedback import get_user_feedback, fine_tune_model, save_feedback_data
 
-def load_and_preprocess_image(image_path, target_size=(224, 224)):
-    # Check if file exists
-    if not os.path.exists(image_path):
-        raise ValueError(f"Image file not found: {image_path}")
-    
-    try:
-        # Try to import various image format handlers
-        try:
-            from pillow_avif import AvifImagePlugin  # For AVIF support
-        except ImportError:
-            print("AVIF support not available. Install with: pip install pillow-avif")
-        
-        try:
-            from pillow_heif import register_heif_opener  # For HEIC support
-            register_heif_opener()
-        except ImportError:
-            print("HEIC support not available. Install with: pip install pillow-heif")
-        
-        try:
-            from PIL import Image, ImageOps
-            import warnings
-            warnings.filterwarnings('ignore')  # Ignore PIL warnings
-            
-            # Try to open the image
-            img = Image.open(image_path)
-            
-            # Convert to RGB (handles grayscale, RGBA, etc.)
-            img = img.convert('RGB')
-            
-            # Auto-orient image based on EXIF data
-            img = ImageOps.exif_transpose(img)
-            
-            # Resize maintaining aspect ratio
-            img.thumbnail(target_size, Image.Resampling.LANCZOS)
-            
-            # Create new image with padding if needed
-            new_img = Image.new('RGB', target_size, (0, 0, 0))
-            
-            # Paste the image in the center
-            offset = ((target_size[0] - img.size[0]) // 2,
-                     (target_size[1] - img.size[1]) // 2)
-            new_img.paste(img, offset)
-            
-            # Convert to numpy array
-            img = np.array(new_img)
-            
-            # Normalize to [0,1]
-            img = img.astype(np.float32) / 255.0
-            
-            # Add batch dimension
-            img = np.expand_dims(img, axis=0)
-            
-            return img
-            
-        except Exception as e:
-            # Try OpenCV as fallback
-            import cv2
-            img = cv2.imread(image_path)
-            if img is not None:
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                img = cv2.resize(img, target_size)
-                img = img.astype(np.float32) / 255.0
-                img = np.expand_dims(img, axis=0)
-                return img
-            else:
-                raise ValueError("OpenCV fallback also failed to load the image")
-                
-    except Exception as e:
-        raise ValueError(f"Error loading image: {e}\n"
-                        f"Supported formats: JPEG, PNG, WebP, AVIF*, HEIC*\n"
-                        f"(*requires additional packages)\n"
-                        f"Install support for all formats with:\n"
-                        f"pip install pillow pillow-avif pillow-heif")
-
-def predict_chonk(image_path):
+def predict_chonk(image_path, enable_feedback=True):
     try:
         # Print current working directory and image path for debugging
         print(f"Current working directory: {os.getcwd()}")
@@ -109,6 +34,26 @@ def predict_chonk(image_path):
         print(f"\nResult: {cat_type} CAT")
         print(f"Confidence: {confidence*100:.2f}%")
         
+        # Get feedback if enabled
+        if enable_feedback:
+            correct = get_user_feedback(image_path, is_chonky)
+            if not correct:
+                # User says prediction was wrong
+                correct_label = 0 if is_chonky else 1  # Opposite of prediction
+                
+                # Fine-tune model
+                loss = fine_tune_model(model, img, correct_label)
+                print(f"Model updated (loss: {loss:.4f})")
+                
+                # Save feedback data
+                save_feedback_data(image_path, correct_label)
+                
+                # Save updated model
+                model.save('models/best_model.keras')
+                print("Model saved with updates")
+        
+        return is_chonky, confidence
+        
     except Exception as e:
         print(f"Error: {e}")
         print("\nUsage tips:")
@@ -117,10 +62,8 @@ def predict_chonk(image_path):
         print("3. Make sure the trained model exists at 'models/best_model.keras'")
 
 if __name__ == "__main__":
+    import sys
     if len(sys.argv) != 2:
-        print("Usage: python predict.py <path_to_image>")
-        print("Example: python predict.py input.jpg")
-        sys.exit(1)
-    
-    image_path = sys.argv[1]
-    predict_chonk(image_path) 
+        print("Usage: python predict.py <image_path>")
+    else:
+        predict_chonk(sys.argv[1]) 
