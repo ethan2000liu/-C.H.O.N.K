@@ -5,6 +5,9 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
+import os
+import certifi
+os.environ['SSL_CERT_FILE'] = certifi.where()
 
 def create_model():
     # Load pre-trained ResNet50 without top layers
