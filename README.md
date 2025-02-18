@@ -7,13 +7,30 @@ A deep learning project that uses computer vision to classify cats based on thei
 
 ## 🚀 Quick Start  
 
-install requirements.txt
-run crawl.py to download images
-run preprocess.py to preprocess the images
-run train.py to train the model
-run evaluate.py to evaluate the model
-run python3 predict.py input.img to predict on new images
-
+install `requirements.txt`
+```
+pip3 install -r requirements.txt
+```
+run `crawl.py` to download images
+```
+python3 crawl.py
+```
+run `preprocess.py` to preprocess the images
+```
+python3 preprocess.py
+```
+run `train.py` to train the model
+```
+python3 train.py
+```
+run `evaluate.py` to evaluate the model
+```
+python3 evaluate.py
+```
+run `python3 predict.py` input.img to predict on new images
+```
+python3 predict.py
+```
 
 ## 🚀 Project Overview  
 1. **Data Collection** – Automatically scrapes and downloads images of fat cats.  
